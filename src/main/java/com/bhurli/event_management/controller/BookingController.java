@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -63,12 +64,34 @@ public class BookingController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @Operation(
+            summary = "Get My Bookings",
+            description = "Returns all bookings of the currently logged-in user."
+    )
+
+    @ApiResponses(value = {
+
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Bookings fetched successfully"
+            )
+
+    })
+
+    @GetMapping("/my-bookings")
+    public ResponseEntity<List<BookingResponse>> getMyBookings() {
+
+        return ResponseEntity.ok(
+                bookingService.getMyBookings()
+        );
+
+    }
+
     //swagger
     @Operation(
             summary = "Get Booking By ID",
             description = "Returns booking details using booking ID."
     )
-
     @ApiResponses(value = {
 
             @ApiResponse(
@@ -105,6 +128,7 @@ public class BookingController {
 
     })
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<BookingResponse>> getAllBookings() {
 
@@ -113,7 +137,8 @@ public class BookingController {
         );
     }
 
-    //swahher documentization
+
+    // Swagger
     @Operation(
             summary = "Cancel Booking",
             description = "Cancels an existing booking."
@@ -122,7 +147,7 @@ public class BookingController {
     @ApiResponses(value = {
 
             @ApiResponse(
-                    responseCode = "204",
+                    responseCode = "200",
                     description = "Booking cancelled successfully"),
 
             @ApiResponse(
@@ -135,13 +160,13 @@ public class BookingController {
 
     })
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelBooking(
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<BookingResponse> cancelBooking(
             @PathVariable Long id) {
 
-        bookingService.cancelBooking(id);
+        BookingResponse response = bookingService.cancelBooking(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(response);
     }
 
 

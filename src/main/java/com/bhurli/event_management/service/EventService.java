@@ -38,6 +38,7 @@ EventResponse createEvent(EventRequest request);
     EventResponse updateEvent(Long id, EventRequest request);
 
     void deleteEvent(Long id);
+    EventResponse cancelEvent(Long id);
 
     //custom pagination
     PageResponse<EventResponse> getAllEventsWithPagination(

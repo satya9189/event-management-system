@@ -236,6 +236,39 @@ public class EventController {
     }
 
     @Operation(
+            summary = "Cancel Event",
+            description = "Cancels an event. Only the owner organizer or admin can cancel."
+    )
+    @ApiResponses(value = {
+
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Event cancelled successfully"),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized"),
+
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied"),
+
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Event not found")
+
+    })
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<EventResponse> cancelEvent(
+            @PathVariable Long id) {
+
+        EventResponse response = eventService.cancelEvent(id);
+
+        return ResponseEntity.ok(response);
+
+    }
+
+    @Operation(
             summary = "Search Events By Type",
             description = "Returns all events of the specified type."
     )

@@ -18,6 +18,7 @@ import com.bhurli.event_management.exception.ResourceNotFoundException;
 import com.bhurli.event_management.mapper.BookingMapper;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -34,17 +35,38 @@ public class BookingServiceImpl implements BookingService {
 
     private final UserRepository userRepository;
 
-    @Override
-    public BookingResponse createBooking(BookingRequest request) {
-        // Logged-in user
+    private User getCurrentUser() {
+
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email)
+        return userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(AppConstants.USER_NOT_FOUND));
+
+    }
+
+    private void validateBookingOwnership(
+            Booking booking,
+            User currentUser
+    ) {
+
+        if (!booking.getUser().getId().equals(currentUser.getId())) {
+
+            throw new AccessDeniedException(
+                    "You are not authorized to access this booking."
+            );
+
+        }
+
+    }
+
+    @Override
+    public BookingResponse createBooking(BookingRequest request) {
+        // Logged-in user
+        User user = getCurrentUser();
 
         // Find event
         Event event = eventRepository.findById(request.getEventId())
@@ -99,6 +121,10 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException(AppConstants.BOOKING_NOT_FOUND));
 
+        User currentUser = getCurrentUser();
+
+        validateBookingOwnership(booking, currentUser);
+
         return BookingMapper.toResponse(booking);
     }
 
@@ -111,15 +137,31 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public void cancelBooking(Long id) {
+    public List<BookingResponse> getMyBookings() {
+
+        User currentUser = getCurrentUser();
+
+        return bookingRepository.findByUser(currentUser)
+                .stream()
+                .map(BookingMapper::toResponse)
+                .toList();
+
+    }
+
+    @Override
+    public BookingResponse cancelBooking(Long id) {
 
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(AppConstants.BOOKING_NOT_FOUND));
 
+        User currentUser = getCurrentUser();
+
+        validateBookingOwnership(booking, currentUser);
+
         // Already cancelled
         if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
-            return;
+            return BookingMapper.toResponse(booking);
         }
 
         // Restore seats
@@ -134,7 +176,9 @@ public class BookingServiceImpl implements BookingService {
 
         eventRepository.save(event);
 
-        bookingRepository.save(booking);
+        Booking updatedBooking = bookingRepository.save(booking);
+
+        return BookingMapper.toResponse(updatedBooking);
 
     }
 }

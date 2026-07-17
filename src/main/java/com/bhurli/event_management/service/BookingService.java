@@ -26,5 +26,7 @@ public interface BookingService {
 
     List<BookingResponse> getAllBookings();
 
-    void cancelBooking(Long id);
+    List<BookingResponse> getMyBookings();
+
+    BookingResponse cancelBooking(Long id);
 }

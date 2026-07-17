@@ -1,6 +1,7 @@
 package com.bhurli.event_management.service.impl;
 
 import com.bhurli.event_management.dto.response.PageResponse;
+import com.bhurli.event_management.entity.Booking;
 import com.bhurli.event_management.entity.Event;
 import com.bhurli.event_management.entity.User;
 import com.bhurli.event_management.enums.EventCategory;
@@ -9,6 +10,7 @@ import com.bhurli.event_management.enums.EventType;
 import com.bhurli.event_management.exception.ResourceNotFoundException;
 import com.bhurli.event_management.mapper.EventMapper;
 import com.bhurli.event_management.constant.AppConstants;
+import com.bhurli.event_management.repository.BookingRepository;
 import com.bhurli.event_management.specification.EventSpecification;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
@@ -37,6 +39,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
 
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
 
     @Override
     public EventResponse createEvent(EventRequest request) {
@@ -145,7 +148,34 @@ public class EventServiceImpl implements EventService {
 
         validateEventOwnership(event, currentUser);
 
+        List<Booking> bookings = bookingRepository.findByEvent(event);
+
+        if (!bookings.isEmpty()) {
+            throw new IllegalStateException(
+                    "Cannot delete event because bookings already exist.");
+        }
+
         eventRepository.delete(event);
+
+    }
+
+    @Override
+    public EventResponse cancelEvent(Long id) {
+
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                AppConstants.EVENT_NOT_FOUND));
+
+        User currentUser = getCurrentUser();
+
+        validateEventOwnership(event, currentUser);
+
+        event.setEventStatus(EventStatus.CANCELLED);
+
+        Event updatedEvent = eventRepository.save(event);
+
+        return EventMapper.toResponse(updatedEvent);
 
     }
 
