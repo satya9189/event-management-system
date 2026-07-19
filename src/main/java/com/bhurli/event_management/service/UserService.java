@@ -1,6 +1,7 @@
 package com.bhurli.event_management.service;
 
 import com.bhurli.event_management.dto.request.LoginRequest;
+import com.bhurli.event_management.dto.request.UpdateProfileRequest;
 import com.bhurli.event_management.dto.request.UserRequest;
 import com.bhurli.event_management.dto.response.LoginResponse;
 import com.bhurli.event_management.dto.response.UserResponse;
@@ -30,6 +31,8 @@ public interface UserService {
 
     LoginResponse loginUser(LoginRequest request);
 
+    //User APIs
+
     UserResponse getUserById(Long id);
 
     UserResponse getUserByEmail(String email);
@@ -39,5 +42,10 @@ public interface UserService {
     UserResponse updateUser(Long id, UserRequest request);
 
     void deleteUser(Long id);
+
+    // Profile APIs
+    UserResponse getMyProfile();
+
+    UserResponse updateMyProfile(UpdateProfileRequest request);
 
 }

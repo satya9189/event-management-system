@@ -1,6 +1,7 @@
 package com.bhurli.event_management.service.impl;
 import com.bhurli.event_management.constant.AppConstants;
 import com.bhurli.event_management.dto.request.LoginRequest;
+import com.bhurli.event_management.dto.request.UpdateProfileRequest;
 import com.bhurli.event_management.dto.request.UserRequest;
 import com.bhurli.event_management.dto.response.LoginResponse;
 import com.bhurli.event_management.dto.response.UserResponse;
@@ -17,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.bhurli.event_management.security.jwt.JwtService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -158,4 +161,54 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
 
     }
+
+    private User getCurrentUser() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        String email = authentication.getName();
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                AppConstants.USER_NOT_FOUND
+                        ));
+    }
+
+    @Override
+    public UserResponse getMyProfile() {
+
+        User currentUser = getCurrentUser();
+
+        return UserMapper.toResponse(currentUser);
+
+    }
+
+    @Override
+    public UserResponse updateMyProfile(UpdateProfileRequest request) {
+
+        User currentUser = getCurrentUser();
+
+        // Check if phone number already exists for another user
+        if (!currentUser.getPhone().equals(request.getPhone())
+                && userRepository.existsByPhone(request.getPhone())) {
+
+            throw new ResourceAlreadyExistsException(
+                    AppConstants.PHONE_ALREADY_EXISTS
+            );
+        }
+
+        // Update allowed fields
+        currentUser.setFirstName(request.getFirstName());
+        currentUser.setLastName(request.getLastName());
+        currentUser.setPhone(request.getPhone());
+
+        // Save updated user
+        User updatedUser = userRepository.save(currentUser);
+
+        return UserMapper.toResponse(updatedUser);
+    }
+
+
 }

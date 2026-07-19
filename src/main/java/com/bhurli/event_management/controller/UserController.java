@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.bhurli.event_management.dto.request.UpdateProfileRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -64,6 +66,7 @@ public class UserController {
             summary = "Get User By ID",
             description = "Returns user details for the specified user ID."
     )
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(
             @PathVariable Long id) {
@@ -74,6 +77,7 @@ public class UserController {
     }
 
     //Api 4
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/email/{email}")
     public ResponseEntity<UserResponse> getUserByEmail(
             @PathVariable String email) {
@@ -84,6 +88,7 @@ public class UserController {
     }
 
     //Api 5
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
 
@@ -97,6 +102,7 @@ public class UserController {
             summary = "Update User",
             description = "Updates the details of an existing user."
     )
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
@@ -112,6 +118,7 @@ public class UserController {
             summary = "Delete User",
             description = "Deletes the specified user account."
     )
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(
             @PathVariable Long id) {
@@ -119,6 +126,31 @@ public class UserController {
         userService.deleteUser(id);
 
         return ResponseEntity.ok("User deleted successfully.");
+    }
+
+    @Operation(
+            summary = "Get My Profile",
+            description = "Returns the profile details of the currently logged-in user."
+    )
+    @GetMapping("/profile")
+    public ResponseEntity<UserResponse> getMyProfile() {
+
+        UserResponse response = userService.getMyProfile();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Update My Profile",
+            description = "Updates the profile of the currently logged-in user."
+    )
+    @PutMapping("/profile")
+    public ResponseEntity<UserResponse> updateMyProfile(
+            @Valid @RequestBody UpdateProfileRequest request) {
+
+        UserResponse response = userService.updateMyProfile(request);
+
+        return ResponseEntity.ok(response);
     }
 
 }
